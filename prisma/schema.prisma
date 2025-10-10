@@ -1,0 +1,84 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model Usuario {
+  idUsuario   Int         @id @default(autoincrement())
+  nomeUsuario String
+  email       String      @unique
+  senha       String
+  reservas    Reserva[]   @relation("UsuarioReservas")
+  listaEspera ListaEspera[]
+}
+
+model Livro {
+  idLivro       Int            @id @default(autoincrement())
+  titulo        String
+  isbn          String         @unique
+  autor         String
+  editora       String?
+  anoPublicacao Int?
+  paginas       Int?
+  status        LivroStatus    @default(DISPO)
+  reservasLivro ReservaLivro[]
+  listaEspera   ListaEspera[]
+}
+
+model Reserva {
+  idReserva       Int            @id @default(autoincrement())
+  idUsuario       Int
+  dataSolicitacao DateTime       @default(now())
+  statusReserva   ReservaStatus  @default(ATIVA)
+  dataNotificacao DateTime?
+  prazoEmprestimo DateTime?
+  dataRetirada    DateTime?
+  dataDevolucao   DateTime?
+  usuario         Usuario        @relation(fields: [idUsuario], references: [idUsuario], name: "UsuarioReservas")
+  livros          ReservaLivro[]
+}
+
+model ReservaLivro {
+  idReserva Int
+  idLivro   Int
+
+  reserva Reserva @relation(fields: [idReserva], references: [idReserva])
+  livro   Livro   @relation(fields: [idLivro], references: [idLivro])
+
+  @@id([idReserva, idLivro])
+  @@map("ReservaLivro")
+}
+
+model ListaEspera {
+  idLista       Int         @id @default(autoincrement())
+  idUsuario     Int
+  idLivro       Int
+  ordemFila     Int
+  dataEntradaFila DateTime  @default(now())
+  statusFila    FilaStatus  @default(ATIVO)
+
+  usuario Usuario @relation(fields: [idUsuario], references: [idUsuario])
+  livro   Livro   @relation(fields: [idLivro], references: [idLivro])
+}
+
+enum ReservaStatus {
+  ATIVA
+  CANCELADA
+  EXPIRADA
+}
+
+enum LivroStatus {
+  DISPO    // Disponivel
+  INDISPO  // Indisponivel
+  RESERVADO
+}
+
+enum FilaStatus {
+  ATIVO
+  CANCELADO
+  ATENDIDO
+}
