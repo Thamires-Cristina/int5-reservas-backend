@@ -2,10 +2,11 @@ import { Body, Controller, Delete, Get, Param, ParseIntPipe, Post, Put } from '@
 import { LivrosService } from './livros.service';
 import { CreateLivroDto } from './dto/create-livro.dto';
 import { UpdateLivroDto } from './dto/update-livro.dto';
+import { livro_status } from '@prisma/client'; // enum correto do Prisma
 
 @Controller('livros')
 export class LivrosController {
-  constructor(private readonly livrosService: LivrosService) {}
+  constructor(private readonly livrosService: LivrosService) { }
 
   @Post()
   create(@Body() dto: CreateLivroDto) {
@@ -33,7 +34,10 @@ export class LivrosController {
   }
 
   @Post(':id/marcar/:status')
-  marcar(@Param('id', ParseIntPipe) id: number, @Param('status') status: 'DISPO' | 'INDISPO' | 'RESERVADO') {
+  marcar(
+    @Param('id', ParseIntPipe) id: number,
+    @Param('status') status: 'DISPO' | 'INDISPO' | 'RESERVADO',
+  ) {
     return this.livrosService.marcarDisponibilidade(id, status);
   }
 }

@@ -1,6 +1,8 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { PrismaService } from '../prisma/prisma.service';
+import { reserva_statusReserva } from '@prisma/client';
+import { livro_status } from '@prisma/client';
 
 @Injectable()
 export class ReservasScheduler {
@@ -8,7 +10,6 @@ export class ReservasScheduler {
 
   constructor(private prisma: PrismaService) {}
 
-  // executa a cada 1 hora — expira reservas que ultrapassaram prazoEmprestimo (se definido)
   @Cron(CronExpression.EVERY_HOUR)
   async verificarExpiradas() {
     this.logger.log('Verificando reservas expiradas...');
@@ -17,16 +18,19 @@ export class ReservasScheduler {
     const expiradas = await this.prisma.reserva.findMany({
       where: {
         prazoEmprestimo: { lt: now },
-        statusReserva: 'ATIVA',
+        statusReserva: reserva_statusReserva.Ativa,
       },
     });
 
     for (const r of expiradas) {
-      await this.prisma.reserva.update({ where: { idReserva: r.idReserva }, data: { statusReserva: 'EXPIRADA' }});
-      // libera livros da reserva
-      const rels = await this.prisma.reservaLivro.findMany({ where: { idReserva: r.idReserva }});
+      await this.prisma.reserva.update({
+        where: { idReserva: r.idReserva },
+        data: { statusReserva: reserva_statusReserva.Expirada },
+      });
+
+      const rels = await this.prisma.reservalivro.findMany({ where: { idReserva: r.idReserva } });
       for (const rel of rels) {
-        await this.prisma.livro.update({ where: { idLivro: rel.idLivro }, data: { status: 'DISPO' }});
+        await this.prisma.livro.update({ where: { idLivro: rel.idLivro }, data: { status: livro_status.DISPONIVEL } });
       }
     }
 

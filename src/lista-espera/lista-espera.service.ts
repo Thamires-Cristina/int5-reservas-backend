@@ -2,91 +2,72 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateListaEsperaDto } from './dto/create-lista-espera.dto';
 import { UpdateListaEsperaDto } from './dto/update-lista-espera.dto';
-import { FilaStatus } from '@prisma/client';
+import { listaespera_statusFila } from '@prisma/client';
 
 @Injectable()
 export class ListaEsperaService {
   constructor(private readonly prisma: PrismaService) {}
 
-  // Cria um novo item na lista de espera
   async create(dto: CreateListaEsperaDto) {
-    return this.prisma.listaEspera.create({
+    return this.prisma.listaespera.create({
       data: {
         idUsuario: dto.idUsuario,
         idLivro: dto.idLivro,
-        ordemFila: dto.ordemFila ?? 0, // valor padrão se não fornecido
-        statusFila: dto.statusFila ?? FilaStatus.ATIVO, // enum correto
-        // dataEntradaFila: Prisma usa default now()
+        ordemFila: dto.ordemFila ?? 0,
+        statusFila: dto.statusFila
+          ? listaespera_statusFila[dto.statusFila as keyof typeof listaespera_statusFila]
+          : listaespera_statusFila.Ativo,
       },
     });
   }
 
-  // Retorna todos os registros da lista de espera
   async findAll() {
-    return this.prisma.listaEspera.findMany({
-      orderBy: { idLista: 'asc' },
-    });
+    return this.prisma.listaespera.findMany({ orderBy: { idLista: 'asc' } });
   }
 
-  // Busca por ID do livro, ordenando pela fila
   async findByLivro(idLivro: number) {
-    return this.prisma.listaEspera.findMany({
+    return this.prisma.listaespera.findMany({
       where: { idLivro },
       orderBy: { ordemFila: 'asc' },
     });
   }
 
-  // Atualiza um registro existente
   async update(idLista: number, dto: UpdateListaEsperaDto) {
-    const item = await this.prisma.listaEspera.findUnique({
-      where: { idLista },
-    });
+    const item = await this.prisma.listaespera.findUnique({ where: { idLista } });
+    if (!item) throw new NotFoundException('Item da fila não encontrado');
 
-    if (!item) {
-      throw new NotFoundException('Item da fila não encontrado');
-    }
+    const statusFila = dto.statusFila
+      ? listaespera_statusFila[dto.statusFila as keyof typeof listaespera_statusFila]
+      : item.statusFila;
 
-    return this.prisma.listaEspera.update({
+    return this.prisma.listaespera.update({
       where: { idLista },
       data: {
-        ...dto,
-        statusFila: dto.statusFila ?? item.statusFila, // mantém enum correto
-        ordemFila: dto.ordemFila ?? item.ordemFila,   // mantém valor existente
+        ordemFila: dto.ordemFila ?? item.ordemFila,
+        statusFila,
       },
     });
   }
 
-  // Remove um item da lista de espera
   async remove(idLista: number) {
-    const item = await this.prisma.listaEspera.findUnique({
-      where: { idLista },
-    });
+    const item = await this.prisma.listaespera.findUnique({ where: { idLista } });
+    if (!item) throw new NotFoundException('Item da fila não encontrado');
 
-    if (!item) {
-      throw new NotFoundException('Item da fila não encontrado');
-    }
-
-    await this.prisma.listaEspera.delete({
-      where: { idLista },
-    });
-
+    await this.prisma.listaespera.delete({ where: { idLista } });
     return { ok: true };
   }
 
-  // Retorna e marca o primeiro ativo da fila como atendido
   async popProximoAtendido(idLivro: number) {
-    const primeiro = await this.prisma.listaEspera.findFirst({
-      where: { idLivro, statusFila: FilaStatus.ATIVO },
+    const primeiro = await this.prisma.listaespera.findFirst({
+      where: { idLivro, statusFila: listaespera_statusFila.Ativo },
       orderBy: { ordemFila: 'asc' },
     });
 
-    if (!primeiro) {
-      throw new NotFoundException('Nenhum usuário ativo na fila');
-    }
+    if (!primeiro) throw new NotFoundException('Nenhum usuário ativo na fila');
 
-    await this.prisma.listaEspera.update({
+    await this.prisma.listaespera.update({
       where: { idLista: primeiro.idLista },
-      data: { statusFila: FilaStatus.ATENDIDO },
+      data: { statusFila: listaespera_statusFila.Atendido },
     });
 
     return primeiro;

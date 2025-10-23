@@ -1,9 +1,12 @@
-import { IsOptional } from 'class-validator';
+import { IsOptional, IsEnum, IsInt } from 'class-validator';
+import { listaespera_statusFila } from '@prisma/client';
 
 export class UpdateListaEsperaDto {
   @IsOptional()
+  @IsInt()
   ordemFila?: number;
 
   @IsOptional()
-  statusFila?: 'ATIVO' | 'CANCELADO' | 'ATENDIDO';
+  @IsEnum(listaespera_statusFila)
+  statusFila?: listaespera_statusFila;
 }

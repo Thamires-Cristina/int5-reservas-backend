@@ -1,4 +1,4 @@
-import { IsInt, IsNotEmpty, ArrayNotEmpty, ArrayUnique, IsArray } from 'class-validator';
+import { IsInt, ArrayNotEmpty, ArrayUnique, IsArray } from 'class-validator';
 
 export class CreateReservaDto {
   @IsInt()

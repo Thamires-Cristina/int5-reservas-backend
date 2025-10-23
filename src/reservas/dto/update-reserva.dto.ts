@@ -1,8 +1,10 @@
-import { IsOptional } from 'class-validator';
+import { IsOptional, IsEnum } from 'class-validator';
+import { reserva_statusReserva } from '@prisma/client';
 
 export class UpdateReservaDto {
   @IsOptional()
-  statusReserva?: 'ATIVA' | 'CANCELADA' | 'EXPIRADA';
+  @IsEnum(reserva_statusReserva)
+  statusReserva?: reserva_statusReserva;
 
   @IsOptional()
   dataRetirada?: Date;

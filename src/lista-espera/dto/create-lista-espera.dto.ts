@@ -1,5 +1,5 @@
 import { IsInt, IsOptional, IsEnum } from 'class-validator';
-import { FilaStatus } from '@prisma/client';
+import { listaespera_statusFila } from '@prisma/client';
 
 export class CreateListaEsperaDto {
   @IsInt()
@@ -10,9 +10,9 @@ export class CreateListaEsperaDto {
 
   @IsInt()
   @IsOptional()
-  ordemFila?: number; // opcional, o serviço coloca 0 se não enviado
+  ordemFila?: number;
 
-  @IsEnum(FilaStatus)
+  @IsEnum(listaespera_statusFila)
   @IsOptional()
-  statusFila?: FilaStatus; // opcional, o serviço coloca ATIVO se não enviado
+  statusFila?: listaespera_statusFila;
 }

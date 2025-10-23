@@ -6,9 +6,9 @@ export class UpdateUsuarioDto {
 
   @IsOptional()
   @IsEmail()
-  email: string;
+  email?: string;
 
   @IsOptional()
   @MinLength(6)
-  senha: string;
+  senha?: string;
 }

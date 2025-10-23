@@ -1,4 +1,5 @@
-import { IsOptional, IsInt } from 'class-validator';
+import { IsOptional, IsInt, IsEnum } from 'class-validator';
+import { livro_status } from '@prisma/client';
 
 export class UpdateLivroDto {
   @IsOptional()
@@ -22,5 +23,6 @@ export class UpdateLivroDto {
   paginas?: number;
 
   @IsOptional()
-  status?: 'DISPO' | 'INDISPO' | 'RESERVADO';
+  @IsEnum(livro_status)
+  status?: livro_status;
 }

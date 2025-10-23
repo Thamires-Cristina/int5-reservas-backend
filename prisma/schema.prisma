@@ -7,78 +7,81 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model Usuario {
-  idUsuario   Int         @id @default(autoincrement())
-  nomeUsuario String
-  email       String      @unique
-  senha       String
-  reservas    Reserva[]   @relation("UsuarioReservas")
-  listaEspera ListaEspera[]
+model listaespera {
+  idLista         Int                     @id @default(autoincrement())
+  idUsuario       Int
+  idLivro         Int
+  ordemFila       Int
+  dataEntradaFila DateTime                @default(now()) @db.DateTime(0)
+  statusFila      listaespera_statusFila? @default(Ativo)
+  usuario         usuario                 @relation(fields: [idUsuario], references: [idUsuario], onUpdate: Restrict, map: "listaespera_ibfk_1")
+  livro           livro                   @relation(fields: [idLivro], references: [idLivro], onUpdate: Restrict, map: "listaespera_ibfk_2")
+
+  @@index([idLivro], map: "idLivro")
+  @@index([idUsuario], map: "idUsuario")
 }
 
-model Livro {
+model livro {
   idLivro       Int            @id @default(autoincrement())
-  titulo        String
-  isbn          String         @unique
-  autor         String
-  editora       String?
+  titulo        String         @db.VarChar(200)
+  isbn          String         @unique(map: "isbn") @db.VarChar(20)
+  autor         String         @db.VarChar(150)
+  editora       String?        @db.VarChar(100)
   anoPublicacao Int?
   paginas       Int?
-  status        LivroStatus    @default(DISPO)
-  reservasLivro ReservaLivro[]
-  listaEspera   ListaEspera[]
+  status        livro_status?  @default(DISPONIVEL)
+  listaespera   listaespera[]
+  reservalivro  reservalivro[]
 }
 
-model Reserva {
-  idReserva       Int            @id @default(autoincrement())
+model reserva {
+  idReserva       Int                    @id @default(autoincrement())
   idUsuario       Int
-  dataSolicitacao DateTime       @default(now())
-  statusReserva   ReservaStatus  @default(ATIVA)
-  dataNotificacao DateTime?
-  prazoEmprestimo DateTime?
-  dataRetirada    DateTime?
-  dataDevolucao   DateTime?
-  usuario         Usuario        @relation(fields: [idUsuario], references: [idUsuario], name: "UsuarioReservas")
-  livros          ReservaLivro[]
+  dataSolicitacao DateTime               @default(now()) @db.DateTime(0)
+  statusReserva   reserva_statusReserva? @default(Ativa)
+  dataNotificacao DateTime?              @db.DateTime(0)
+  prazoEmprestimo DateTime?              @db.DateTime(0)
+  dataRetirada    DateTime?              @db.DateTime(0)
+  dataDevolucao   DateTime?              @db.DateTime(0)
+  usuario         usuario                @relation(fields: [idUsuario], references: [idUsuario], onUpdate: Restrict, map: "reserva_ibfk_1")
+  reservalivro    reservalivro[]
+
+  @@index([idUsuario], map: "idUsuario")
 }
 
-model ReservaLivro {
+model reservalivro {
   idReserva Int
   idLivro   Int
-
-  reserva Reserva @relation(fields: [idReserva], references: [idReserva])
-  livro   Livro   @relation(fields: [idLivro], references: [idLivro])
+  reserva   reserva @relation(fields: [idReserva], references: [idReserva], onUpdate: Restrict, map: "reservalivro_ibfk_1")
+  livro     livro   @relation(fields: [idLivro], references: [idLivro], onUpdate: Restrict, map: "reservalivro_ibfk_2")
 
   @@id([idReserva, idLivro])
-  @@map("ReservaLivro")
+  @@index([idLivro], map: "idLivro")
 }
 
-model ListaEspera {
-  idLista       Int         @id @default(autoincrement())
-  idUsuario     Int
-  idLivro       Int
-  ordemFila     Int
-  dataEntradaFila DateTime  @default(now())
-  statusFila    FilaStatus  @default(ATIVO)
-
-  usuario Usuario @relation(fields: [idUsuario], references: [idUsuario])
-  livro   Livro   @relation(fields: [idLivro], references: [idLivro])
+model usuario {
+  idUsuario   Int           @id @default(autoincrement())
+  nomeUsuario String        @db.VarChar(100)
+  email       String        @unique(map: "email") @db.VarChar(150)
+  senha       String        @db.VarChar(255)
+  listaespera listaespera[]
+  reserva     reserva[]
 }
 
-enum ReservaStatus {
-  ATIVA
-  CANCELADA
-  EXPIRADA
+enum reserva_statusReserva {
+  Ativa
+  Cancelada
+  Expirada
 }
 
-enum LivroStatus {
-  DISPO    // Disponivel
-  INDISPO  // Indisponivel
+enum listaespera_statusFila {
+  Ativo
+  Cancelado
+  Atendido
+}
+
+enum livro_status {
+  DISPONIVEL
+  INDISPONIVEL
   RESERVADO
-}
-
-enum FilaStatus {
-  ATIVO
-  CANCELADO
-  ATENDIDO
 }
